@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from main import app
 from database import Base, engine
 
-# Recreamos la base de datos, solo si no existe
+# Recreate Database, only if not exists
 Base.metadata.create_all(bind=engine)
 
 client = TestClient(app)
@@ -28,12 +28,12 @@ def test_create_user():
     data = response.json()
     assert "testuser_" in data["username"]
     
-    # Salvar ID para las proximas pruebas
+    # Save ID for next tests
     test_user_id = data["id"]
 
 def test_read_user():
     global test_user_id
-    # Utilizar el ID Dinamico
+    # Using Dynamic ID
     response = client.get(f"/users/{test_user_id}")
     assert response.status_code == 200
 
@@ -51,6 +51,6 @@ def test_delete_user():
     response = client.delete(f"/users/{test_user_id}")
     assert response.status_code == 204
     
-    # Verificar que ya no existe
+    # Verify id already dont exists
     response_check = client.get(f"/users/{test_user_id}")
     assert response_check.status_code == 404

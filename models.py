@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import enum
 from database import Base
 
-# Roles permitidos
+# Allowed Roles
 class RoleEnum(str, enum.Enum):
     admin = "admin"
     user = "user"
@@ -22,7 +22,7 @@ class User(Base):
     last_name = Column(String, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.user, nullable=False)
     
-    # Usamos la nueva función para evitar el DeprecationWarning
+    # Uses new function get_utc_now to avoid DeprecationWarning
     created_at = Column(DateTime, default=get_utc_now)
     updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now)
     

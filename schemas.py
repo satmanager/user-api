@@ -11,7 +11,7 @@ class UserBase(BaseModel):
     role: RoleEnum = Field(default=RoleEnum.user, json_schema_extra={"example": "user"}) #admin, user or guest
     active: bool = Field(default=True, json_schema_extra={"example": True})
 
-# Creación (POST)
+# Creation (POST)
 class UserCreate(UserBase):
     pass
 
