@@ -12,7 +12,7 @@ SECRET_KEY = "9a3f470ffd442a047cdfb39cfbf1320a"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login") 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/login") 
 
 # TOKEN BLOCKLIST for logout method
 TOKEN_BLOCKLIST = set()
@@ -82,3 +82,15 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise credentials_exception
     return user
+
+def get_current_admin_user(current_user: models.User = Depends(get_current_user)):
+    """
+    Verifica que el usuario autenticado tenga el rol de 'admin'.
+    Se usa como dependencia en rutas que requieren privilegios elevados.
+    """
+    if current_user.role != models.RoleEnum.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes los permisos necesarios para realizar esta acción (requiere rol de admin)."
+        )
+    return current_user

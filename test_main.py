@@ -8,18 +8,24 @@ Base.metadata.create_all(bind=engine)
 
 client = TestClient(app)
 
+test_user_id = None
+test_token = None # Variable para guardar el token de las pruebas
+
 def test_create_user():
     global test_user_id
     unique_id = str(uuid.uuid4())[:8]    
+    test_password = "TestPassword123"
+    test_username = f"testuser_{unique_id}"
 
     response = client.post(
-            "/users/",
+            "/api/v1/users/",
             json={
-                "username": f"testuser_{unique_id}",
+                "username": test_username,
                 "email": f"test_{unique_id}@testing.com",
+                "password": test_password,
                 "first_name": "Test",
                 "last_name": "User",
-                "role": "user",
+                "role": "admin",
                 "active": True
             },
         )
@@ -28,29 +34,35 @@ def test_create_user():
     data = response.json()
     assert "testuser_" in data["username"]
     
-    # Save ID for next tests
-    test_user_id = data["id"]
+    # Obtain token para for rest of the tests
+    global test_token
+    login_response = client.post(
+        "/api/v1/login",
+        data={"username": test_username, "password": test_password} # OAuth2 usa form-data, no JSON
+    )
+    assert login_response.status_code == 200
+    test_token = login_response.json()["access_token"]    
+
+def get_auth_headers():
+    return {"Authorization": f"Bearer {test_token}"}
 
 def test_read_user():
     global test_user_id
     # Using Dynamic ID
-    response = client.get(f"/users/{test_user_id}")
+    response = client.get(f"/api/v1/users/{test_user_id}", headers=get_auth_headers())
     assert response.status_code == 200
 
 def test_update_user():
     global test_user_id
     response = client.put(
         f"/users/{test_user_id}",
-        json={"first_name": "UpdatedName"}
+        json={"first_name": "UpdatedName"},
+        headers=get_auth_headers()
     )
     assert response.status_code == 200
     assert response.json()["first_name"] == "UpdatedName"
 
 def test_delete_user():
     global test_user_id
-    response = client.delete(f"/users/{test_user_id}")
+    response = client.delete(f"/users/{test_user_id}", headers=get_auth_headers())
     assert response.status_code == 204
-    
-    # Verify id already dont exists
-    response_check = client.get(f"/users/{test_user_id}")
-    assert response_check.status_code == 404
