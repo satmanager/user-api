@@ -1,0 +1,29 @@
+steps:
+  # 1. Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/user-api', '.']
+
+  # 2. Run tests using image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['run', 'gcr.io/$PROJECT_ID/user-api', 'pytest', 'test_main.py']
+
+  # 3. Upload image to GCP Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/user-api']
+
+  # 4. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'user-api'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/user-api'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated' # Allows public access to API
+images:
+  - 'gcr.io/$PROJECT_ID/user-api'
