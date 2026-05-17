@@ -3,6 +3,13 @@ from datetime import datetime
 from typing import Optional
 from models import RoleEnum
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
 class UserBase(BaseModel):
     username: str = Field(..., json_schema_extra={"example": "ecastro"})
     email: EmailStr = Field(..., json_schema_extra={"example": "ecastro@testing.com"})
@@ -13,7 +20,11 @@ class UserBase(BaseModel):
 
 # Creation (POST)
 class UserCreate(UserBase):
-    pass
+    password: str = Field(
+        ...,
+        max_length=72,
+        json_schema_extra={"example": "MySafePassword123"}
+        )
 
 # Update (PUT)
 class UserUpdate(BaseModel):
