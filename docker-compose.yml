@@ -1,0 +1,18 @@
+#version: '3.8'
+
+services:
+  user-api:
+    # Tells Docker to build the image using the Dockerfile in the current directory
+    build: .
+    
+    # Gives your running container a clean, recognizable name
+    container_name: user_api_container
+    
+    # Maps port 8080 on your local machine to port 8080 inside the container
+    ports:
+      - "8080:8080"
+      
+    # Maps your local directory to the /app directory in the container.
+    # This allows your app to live-reload if you change your Python files!
+    volumes:
+      - .:/app
