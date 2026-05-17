@@ -1,3 +1,4 @@
+import pytest
 import uuid
 from fastapi.testclient import TestClient
 from main import app
@@ -8,61 +9,84 @@ Base.metadata.create_all(bind=engine)
 
 client = TestClient(app)
 
-test_user_id = None
-test_token = None # Variable para guardar el token de las pruebas
 
-def test_create_user():
-    global test_user_id
+@pytest.fixture(scope="module")
+def admin_auth_data():
+    """
+    Prepares an admin test user
+    """
     unique_id = str(uuid.uuid4())[:8]    
     test_password = "TestPassword123"
-    test_username = f"testuser_{unique_id}"
+    test_username = f"admin_{unique_id}"
 
-    response = client.post(
+    create_response = client.post(
             "/api/v1/users/",
             json={
                 "username": test_username,
-                "email": f"test_{unique_id}@testing.com",
+                "email": f"admin_{unique_id}@testing.com",
                 "password": test_password,
-                "first_name": "Test",
+                "first_name": "Admin",
                 "last_name": "User",
                 "role": "admin",
                 "active": True
             },
         )
-    assert response.status_code == 201
-
-    data = response.json()
-    assert "testuser_" in data["username"]
+    assert create_response.status_code == 201
     
-    # Obtain token para for rest of the tests
-    global test_token
+    user_id = create_response.json()["id"] 
+
+    # Obtain access token
     login_response = client.post(
         "/api/v1/login",
-        data={"username": test_username, "password": test_password} # OAuth2 usa form-data, no JSON
+        data={"username": test_username, "password": test_password} 
     )
     assert login_response.status_code == 200
-    test_token = login_response.json()["access_token"]    
+    token = login_response.json()["access_token"]    
 
-def get_auth_headers():
-    return {"Authorization": f"Bearer {test_token}"}
+    return {
+        "user_id": user_id,
+        "headers": {"Authorization": f"Bearer {token}"}
+    }
+    # ---------------------------------
 
-def test_read_user():
-    global test_user_id
-    # Using Dynamic ID
-    response = client.get(f"/api/v1/users/{test_user_id}", headers=get_auth_headers())
+def test_create_user():
+    unique_id = str(uuid.uuid4())[:8]    
+
+    response = client.post(
+        "/api/v1/users/",
+        json={
+            "username": f"testuser_{unique_id}",
+            "email": f"test_{unique_id}@testing.com",
+            "password": "TestPassword123",
+            "first_name": "Test",
+            "last_name": "User",
+            "role": "user",
+            "active": True
+        },
+    )
+
+    assert response.status_code == 201
+    assert "testuser_" in response.json()["username"]
+
+def test_read_user(admin_auth_data):
+    response = client.get(
+        f"/api/v1/users/{admin_auth_data['user_id']}", 
+        headers=admin_auth_data["headers"]
+    )
     assert response.status_code == 200
 
-def test_update_user():
-    global test_user_id
+def test_update_user(admin_auth_data):
     response = client.put(
-        f"/users/{test_user_id}",
+        f"/api/v1/users/{admin_auth_data['user_id']}",
         json={"first_name": "UpdatedName"},
-        headers=get_auth_headers()
+        headers=admin_auth_data["headers"]
     )
     assert response.status_code == 200
     assert response.json()["first_name"] == "UpdatedName"
 
-def test_delete_user():
-    global test_user_id
-    response = client.delete(f"/users/{test_user_id}", headers=get_auth_headers())
+def test_delete_user(admin_auth_data):
+    response = client.delete(
+        f"/api/v1/users/{admin_auth_data['user_id']}", 
+        headers=admin_auth_data["headers"]
+    )
     assert response.status_code == 204
