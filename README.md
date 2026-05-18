@@ -15,3 +15,8 @@ uvicorn main:app --reload
 # Run the tests using
 
 pytest test_main.py
+
+# EVALUATION NOTE
+
+# Only to test functionality, the create users endpoint (POST /api/v1/users) was left open.
+# You can create an admin user to test all the other endpoints
